@@ -1,0 +1,508 @@
+---
+title: "USDA - Hawaii State (Animals data Analysis)"
+author: "Abishek Rajaswamy Kuppusamy"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    df_print: paged
+    highlight: tango
+    toc: yes
+    toc_float: yes
+---
+
+```{r include = FALSE}
+
+# SET GLOBAL KNITR OPTIONS
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      fig.width = 10, 
+                      fig.height = 8)
+
+
+
+# LOAD PACKAGES
+
+library(pander)
+library(dplyr)
+library(plyr)
+library(scales)
+library(gt)
+library(stringr)
+library(DT)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+<br>
+<br>
+
+# Introduction
+
+This code through assignment mainly explores the data visualization using ggplot2 and DT(A wrapper of 'Data Tables') package by exercising the Hawaii's most recent Agriculture census at 2017.
+
+**Learn more:** ggplot2 was created by Hadley Wickham in the year 2005. Now, it is one of the most popular R packages used for data visualization. For more information on ggplot can be find here - [**ggplot2**](https://ggplot2.tidyverse.org/)
+
+<br>
+
+## Installing and Loading 
+```{r eval = FALSE}
+
+#installing all necessary packages
+install.packages('pander')
+install.packages('dplyr')
+install.packages('scales')
+install.packages('gt')
+install.packages('stringr')
+install.packages('DT')
+install.packages('ggplot2')
+install.packages('ggpubr')
+
+# Loading all the installed packages
+
+library(pander)
+library(dplyr)
+library(scales)
+library(gt)
+library(stringr)
+library(DT)
+library(ggplot2)
+library(ggpubr)
+
+```
+
+## Why USDA?
+
+The United States Department of Agriculture(USDA) is the U.S federal executive department responsible for developing and executive federal laws related to farming, forestry, rural economic development and food. It aims to meet the needs of farmers and ranchers, promotes agricultural trade and production, works to assure food safety, protects natural resources, fosters rural communities and works to end hunger in the United States. 
+
+
+<br>
+
+## Hawaii Data
+
+The Hawaii state has 5 counties, (Hawaii, Maui, Kauai, Honolulu and Kalawao). For this analysis total Hawaii state is taken into consideration. The data for different states in US with their respective census year can be find here - [**USDA-Census of Agriculture**](https://www.nass.usda.gov/Publications/AgCensus/).
+
+Data can be download in comma-separated values(.csv), Each state and their respective counties have more than 50 tables each comprised with cash flow, land in farms, Irrigation, cattles, fruits and berries etc.. data. The data for the Hawaii state's 2017 census of Agriculture can be found here [**Hawaii- 2017 Census of Agriculture**](https://www.nass.usda.gov/Publications/AgCensus/2017/Full_Report/Volume_1,_Chapter_1_State_Level/Hawaii/)
+
+<br>
+
+## Learning Objectives
+
+I intent to view the Hawaii County USDA NASS tables with Animal inventory - The total animals by animal type and sales by animal type. The tables that are selected for the analysis are as follows:
+
+1. Table 11 - Selected Characteristics of Irrigated and Non-irrigated Farms: 2017 and 2012
+2. Table 12 - Cattle and Calves -- Inventory: 2017 and 2012
+3. Table 13 - Cattle and Calves -- Sales: 2017 and 2012
+4. Table 14 - Cattle and Calves Herd Size by Inventory and Sales: 2017
+5. Table 18 - Cattle and Calves - Number Sold Per Farm by Sales: 2017
+6. Table 19 - Hogs and Pigs -- Inventory: 2017 and 2012
+7. Table 20 - Hogs and Pigs -- Sales: 2017 and 2012
+8. Table 23 -  Hogs and Pigs -- Inventory by Type of Producer: 2017
+
+<br>
+<br>
+
+# Data Pre-Processing
+
+## Setting the working directory
+
+Here, I'll show how to set a working directory to set a file path on your computer that sets a default location to read any file into R script. Working directory can be set as per your desired location.
+```{r}
+
+# To know the current working directory
+getwd() 
+
+# To set the working directory
+setwd("C:/Users/abish/OneDrive/Documents/USDA NASS Census of Agriculture 2017/Total State")
+
+```
+
+
+<br>
+
+## Import the files
+
+Now importing and reading the necessary tables. Since we have downloaded all the files in .csv file format. We will use read.csv to read the files in R script.
+```{r}
+#Import the file
+HCT11 <- read.csv(file = "2017-agcensus-chapter2-table11-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT12 <- read.csv(file = "2017-agcensus-chapter2-table12-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT13 <- read.csv(file = "2017-agcensus-chapter2-table13-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT14 <- read.csv(file = "2017-agcensus-chapter2-table14-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT18 <- read.csv(file = "2017-agcensus-chapter2-table18-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT19 <- read.csv(file = "2017-agcensus-chapter2-table19-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT20 <- read.csv(file = "2017-agcensus-chapter2-table20-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+HCT23 <- read.csv(file = "2017-agcensus-chapter2-table23-HI.csv", head=TRUE, sep=",", stringsAsFactors = FALSE)
+```
+
+
+<br>
+
+## Binding all the tables
+
+The following code is used to bind all the table into a single data frame. Binding is done since all the columns in the tables are same and it easy for doing further analysis.
+
+```{r}
+
+dtotal <- rbind(HCT11, HCT12, HCT13, HCT14, HCT18, HCT19, HCT20, HCT23)
+dtotal
+
+
+```
+
+<br>
+
+## Data Cleaning
+
+Function colnames() is used to display all the column names in the dataframe.
+After viewing all the column names, Some of the columns are not need for the analysis. So we will remove it.
+
+```{r}
+colnames(dtotal) #To display all the column names in the dtotal dataframe
+
+# As the column State, county, county.code, and state.fips are not needed for this analysis. So we will remove these columns
+dtotal = subset(dtotal, select = -c(ï..state,state.fips,county,county.code) )
+
+
+```
+
+<br>
+
+To check the class of each column
+
+```{r}
+summary(dtotal,class) 
+
+```
+
+<br>
+
+Since the value column is in character type, it has to be changed from character to numeric and ","comma in the value column has to be removed.
+
+```{r}
+dtotal$value <- str_replace_all(dtotal$value, ',', '') #Remove "," from values  (gsub can be used to substitute the "," to "" by the following code dtotal$value<-gsub(",","",dtotal$value) )
+dtotal$value <- as.numeric(dtotal$value) #Converting character to numeric
+dtotal$value <- replace(dtotal$value, is.na(dtotal$value), 0) #Replace missing values with 0 in the value column
+
+```
+<br>
+<br>
+
+# Exploratory Data Analysis
+
+<br>
+
+## Animal Types
+
+The following code helps us to find the total number of animals with different species in Hawaii with respect to the 2017 Agriculture census. We will filter the dtotal by detecting the string with "Inventory" in it and "!" not operator is used to exclude the string with Operation rows.
+
+```{r}
+
+pattern = "CATTLE|COW|GOAT|EQUINE|CHUKAR|DUCK|GEESE|PEAFOWL|PHEASANT|PIGEON|QUAIL|CHICKEN|POULTRY|TURKEY|SHEEP|HOG|BISON|ALPACA|LLAMA|RABBIT|SPECIALTY ANIMAL"
+animal_data <- dtotal%>%
+  group_by(data.item)%>%
+  select(commodity, data.item, value)%>%
+  filter(str_detect(commodity, pattern))%>%
+  filter(!str_detect(data.item,"OPERATION"))%>%
+  filter(str_detect(data.item, "INVENTORY"))%>%
+  arrange(data.item)
+animal_data
+
+```
+
+<br> 
+
+
+```{r}
+#Find the sum of total animals by commodity
+sum <- aggregate(x=animal_data$value,
+          by = list(animal_data$commodity),
+          FUN = sum)
+sum[,2][sum[,2] == 0] <-NA
+
+```
+<br>
+
+
+
+```{r}
+#Create a final data frame using the sum data frame
+animal_dataFinal <- sum%>%
+  select(Group.1, x)%>%
+  arrange(desc(x))%>%dplyr::rename(Animal_Type = Group.1, Total = x) #To rename the column name
+
+
+```
+<br>
+
+### Table for Animal Types
+
+**gt():** Renders tables to the HTML output format.
+
+**tab_header:** To add table header to the gt table with a title and subtitle.
+
+**tab_source_note:** For citing the data included in the table.
+
+**tab_footnote:** To add a footnote to the gt table.
+
+- footnote  = The text to be used in the footnote
+- locations = Specifying a set of cells to be associated with the footnote. Can 
+
+**tab_style:** To add custom styles to a cell or set of cells
+
+**fmt_currency:** To add a custom currency symbol to the values in the table
+
+
+```{r}
+#Create a table for the final animal data
+TableData <- animal_dataFinal %>% 
+  gt()%>%
+  tab_header(
+    title = md("Total Animals in Hawaii"),
+    subtitle = "For Hawaii County, Hawaii in 2017")%>%
+  tab_source_note(md('*Source: USDA NASS Agriculture'))%>%
+  tab_footnote(
+    footnote = "No numerical information given",
+    location = cells_body(
+      columns = 2,
+      rows = 15:19 )) %>%
+ tab_style(
+    style = list(
+      cell_fill(color = "#D9E1F2"),
+      cell_text(weight = "bold")
+    ),
+      locations = cells_column_labels(
+        columns = vars(Total, Animal_Type)
+      )
+  )
+TableData 
+
+```
+
+### Bar Graph for Animal Types
+
+To create a plot for Animal types ggplot is exercised.
+
+**ggplot attributes:**
+
+- data = dataset to use for plot
+- aes = x and y aesthetics
+
+**geom_bar:**
+
+- stat = The statistical transformation to use on the data
+   - identity = Height of the bars to represent values in the data
+   - bin      = Height of each bar equal to the number of cases in each group
+   - Count    = Height of the bar proportion to the number of cases in each group
+- aes = bar aesthetics
+
+**ggtitle:** 
+
+- ggtitle is used to represent the the title of the graph.
+
+**scale_x_discrete**: It is used to customize discrete x axis and can also be used for choosing where tick marks should appear, axis limits, axis titles.(for y axis - **scale_y_discrete**)
+
+**scale_x_continuous** and **scale_y_continuous** are used to customize continuous x and y axis
+
++ labels = labels of axis tick marks 
+* name   = x axis labels 
++ limits = To specify the axis min and max values
+
+**theme** is used to alter the size, angle and position of title, legend, and x & y axis
+
+**geom_text** & **geom_label** are are useful for labeling plots. 
+
++ geom_text adds only text to the plot.
++ geom_label draws a rectangle behind the text but currently it doesn't support angle attribute.
+
+
+```{r}
+#Create plots for fitted_data
+p1 <- ggplot(data = animal_dataFinal, aes(x = reorder(Animal_Type, -Total), y = Total)) + geom_bar(stat='identity',aes(fill=animal_dataFinal$Animal_Type)) + ggtitle('Fig. 1 Total Animals in Hawaii') + scale_x_discrete(labels=animal_dataFinal$Animal_Type, name= 'Animals')+scale_fill_discrete(name = "List of Animals") + scale_y_continuous(labels = comma, name="Total", limits=c(0, 600000))+
+  theme(plot.title = element_text(size = 10, face = "bold"),legend.text = element_text( size = 7),axis.text.x = element_text(size = 6,angle = 90, vjust = 0.5, hjust=1,color = "Black"))+ geom_text(aes(label=Total,y =Total + 0.5), size=3.5, angle = 90)
+
+#Final fitted plot
+plot(p1)
+
+```
+
+<br>
+<br>
+
+## Animal Sales
+
+```{r}
+#Create a new data frame to filter just the animals sold
+animal_sales <- dtotal%>%
+  group_by(data.item)%>%
+  select(commodity, data.item, value)%>%
+  filter(str_detect(commodity, pattern))%>%
+  filter(!str_detect(data.item, "OPERATION"))%>%
+  filter(str_detect(data.item, "$"))%>%
+  filter(!str_detect(data.item, "HEAD"))%>%
+  filter(!str_detect(data.item, "INVENTORY"))%>%
+  filter(!str_detect(data.item, "LB"))%>%
+  arrange(data.item)
+
+```
+
+<br>
+
+```{r}
+#Find the sum of number of animals sold by each animal commodity
+sum1 <- aggregate(x=animal_sales$value,
+                 by = list(animal_sales$commodity),
+                 FUN = sum)
+
+```
+<br>
+```{r}
+#Create the sales data frame for the dollar values
+animal_sales1 <- dtotal%>%
+  group_by(commodity)%>%
+  select(commodity, data.item, value)%>%
+  filter(str_detect(commodity, pattern))%>%
+  filter(str_detect(data.item, "SALE"))%>%
+  filter(!str_detect(data.item, "HEAD"))%>%
+  filter(!str_detect(data.item, "INVENTORY"))%>%
+  filter(!str_detect(data.item, "MEASURED IN"))%>%
+  arrange(data.item)
+
+```
+<br>
+
+```{r}
+#Create a data frame for the total sales by animal
+sum2 <- aggregate(x=animal_sales1$value,
+                             by = list(animal_sales1$commodity),
+                             FUN = sum)
+sum2[,2][sum2[,2] == 0] <-NA
+
+```
+<br>
+```{r}
+#Merge the two sum data frames
+sum3 <- merge(x=sum2, y = sum1, by = "Group.1", all.x = TRUE)
+
+```
+<br>
+```{r}
+#Create the final sales data frame to view total sales in dollars and total sales in number of animals sold
+animal_salesFinal <- sum3%>%
+  select(Group.1, x.x, x.y)%>%
+  arrange(desc(x.y))%>%
+  dplyr::rename(AnimalType = Group.1, TotalNumSales = x.x, TotalinDollars = x.y)
+
+```
+<br>
+
+
+### Table for Animal Sales
+```{r}
+#Create a table for the sale of animals
+TableData <- animal_salesFinal %>% 
+  gt()%>%
+  fmt_currency(
+    columns = 3,
+    rows = 1:7,
+    currency = "USD"
+  )%>%
+  tab_header(
+    title = md("Total Animal Sales in Hawaii"),
+    subtitle = "For Hawaii County, Hawaii in 2017")%>%
+  tab_source_note(md('*Source: USDA NASS Agriculture'))%>%
+  tab_footnote(
+    footnote = "No numerical information given",
+    location = cells_body(
+      columns = 3,
+      rows = 8:17
+    )
+  )%>%
+  tab_style(
+    style = list(
+      cell_fill(color = "#D9E1F2"),
+      cell_text(weight = "bold")
+    ),
+    locations = cells_column_labels(
+      columns = vars(TotalNumSales, TotalinDollars, AnimalType)
+    )
+   
+                  )
+TableData 
+```
+<br>
+
+
+### Graph for Animal Sales
+
+**ggarrange** is used to arrange multiple ggplots on a same page.
+
+```{r}
+#Create plots for fitted_data
+SalesColor <- "#FFA500"
+DollarsColor <- '#1261A0'
+
+p3 <- ggplot(animal_salesFinal, aes(x = reorder(AnimalType, -TotalNumSales), y = TotalNumSales, fill = AnimalType)) + labs(x = "Animal Type", y= "Animals Sold") + geom_bar(stat = "identity", width = 0.9, fill = SalesColor) + ggtitle('Fig. 2 Total Animal Sales') + theme(axis.text.x = element_text(color="#696969", size=5, angle=90), axis.text.y = element_text(color='#696969', size=8)) + geom_text(aes(label=TotalNumSales,y =TotalNumSales + 0.5), size=3.5, angle = 90)
+
+p4 <- ggplot(animal_salesFinal, aes(x = reorder(AnimalType, -TotalinDollars), y = TotalinDollars/100000, fill = AnimalType)) + labs(x = "Animal Type", y= "Animals Sold Measured in $ (in 100,000s)") + geom_bar(stat = "identity", width = 0.9, fill = DollarsColor) + ggtitle('Fig. 3 Total Animal Sales in Dollars') + theme(axis.text.x = element_text(color="#696969", size=5, angle=90), axis.text.y = element_text(color='#696969', size=8))+geom_text(aes(label=TotalinDollars/100000,y =TotalinDollars/100000 + 0.5), size=3.5, angle = 90)
+
+p5 <- ggarrange(p3,p4)
+
+#Final fitted plot
+plot(p5)
+```
+
+<br>
+
+# Further Resources
+
+Learn more about [package, technique] with the following:
+
+<br>
+
+**For Table:**
+
+  * [**gt()**](https://gt.rstudio.com/articles/intro-creating-gt-tables.html)
+
+  * [**tab_header**](https://www.rdocumentation.org/packages/gt/versions/0.2.2/topics/tab_header)
+
+  * [**tab_source_note**](https://www.rdocumentation.org/packages/gt/versions/0.2.2/topics/tab_source_note)
+
+  * [**tab_footnote**](https://www.rdocumentation.org/packages/gt/versions/0.2.2/topics/tab_footnote)
+
+  * [**tab_style**](https://www.rdocumentation.org/packages/gt/versions/0.2.2/topics/tab_style)
+
+  * [**fmt_currency**](https://www.rdocumentation.org/packages/gt/versions/0.2.2/topics/fmt_currency)
+
+<br>
+
+**For Bar Graph:**
+
+  * [**geom_bar**](https://ggplot2.tidyverse.org/reference/geom_bar.html)
+
+  * [**ggtitle**](https://ggplot2.tidyverse.org/reference/labs.html)
+
+  * [**scale_x_discrete** and **scale_y_discrete**](https://www.rdocumentation.org/packages/ggplot2/versions/1.0.1/topics/scale_x_discrete)
+
+  * [**scale_x_continuous** and **scale_y_continuous**](https://www.rdocumentation.org/packages/ggplot2/versions/1.0.0/topics/scale_x_continuous)
+
+  * [**theme**](https://ggplot2.tidyverse.org/reference/theme.html)
+
+  * [**geom_text** and **geom_label**](https://ggplot2.tidyverse.org/reference/geom_text.html)
+
+<br>
+
+# Works Cited
+
+This code through references and cites the following sources:
+
+<br>
+
+* Source I. [USDA - Wikipedia](https://en.wikipedia.org/wiki/United_States_Department_of_Agriculture)
+
+* Source II. [Tidyverse - Packages](https://www.tidyverse.org/packages/)
+<br>
+<br>
