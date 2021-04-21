@@ -1,0 +1,415 @@
+---
+title: "Descriptives and Operators"
+author: "Abishek Rajaswamy Kuppusamy"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    theme: cerulean
+    highlight: haddock
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      fig.width = 10, 
+                      fig.height = 6)
+
+```
+
+<br>
+
+# Data
+
+The following report identifies specific tax parcels in Downtown Syracuse, New York (USA).
+
+View the dataset documentation here: [Syracuse, NY Tax Parcel Data](https://ds4ps.github.io/Data-Science-Class/DATA/syr_parcels.html).
+
+<br>
+
+## Required Packages
+
+<br>
+
+```{r}
+
+library(sp)
+library(rgdal)
+library(geojsonio)                            # Load required libraries
+
+```
+
+<br>
+
+## Import Spatial Polygons
+
+We read in spatial polygons (`"sp"`) with function `geojson_read()` to map 
+tax parcel shapes in Syracuse's Downtown area.
+
+<br>
+
+```{r cache = TRUE}
+
+url <- paste0("https://raw.githubusercontent.com/DS4PS/Data",
+              "-Science-Class/master/DATA/downtown-syr.geojson")
+
+downtown <- geojson_read(url, what = "sp")    # Load parcel data
+
+plot(downtown,  
+     border = "gray60",
+     col = "gray80")                          # Visualize parcels
+
+```
+
+<br>
+<br>
+
+### Part 1: Tax Parcel Acres
+
+Parcels with more than one acre are determined with variable `acres` and condition `> 1`.
+
+* Each value in variable `acres` is tested as greater than one, or `> 1`
+* Values in `acres` greater than one become `TRUE`, otherwise `FALSE`
+* All `TRUE` and `FALSE` values are stored in object `these`
+
+<br>
+
+```{r}
+
+result <- downtown$acres > 1                  # Each value in 'acres' is tested
+
+```
+
+<br>
+
+All `TRUE` and `FALSE` values, for each parcel, are converted into colors. 
+
+<br>
+
+```{r}
+
+group.colors <- ifelse(test = result,         # 'test =' accepts TRUE or FALSE values
+                       yes = "firebrick",     # 'yes =' converts values that are TRUE
+                       no = "gray80")         # 'no =' converts values that are FALSE
+
+```
+
+<br>
+
+All tax parcels in `downtown` are mapped with `plot()`.  Each parcel has one of 
+two colors per the above code.
+
+<br>
+
+```{r}
+
+plot(downtown,                                # Plots object 'downtown'
+     border = NA,
+     col = group.colors)                      # Red when TRUE; gray when FALSE
+
+```
+
+<br>
+<br>
+
+### Part 2: Parcels with Single Families
+
+Using variable `landuse` to determine how a tax parcel is used.
+
+<br>
+
+```{r}
+
+unique(downtown$landuse)                      # All unique values in 'landuse'
+
+```
+
+<br>
+
+One of the values in `landuse` is "Single Family".  Therefore, the test is 
+whether or not `landuse` is exactly equal to "Single Family".
+
+<br>
+
+```{r}
+
+result <- downtown$landuse == "Single Family" # Test if 'landuse' is "Single Family"
+
+group.colors <- ifelse(test = result,         # Provide TRUE or FALSE test results
+                       yes = "firebrick",     # If TRUE, make "firebrick"
+                       no = "gray80")         # If FALSE, make "gray80"
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)                      # Plot with respective colors
+
+```
+
+<br>
+
+
+## Part 3: Vacant Lots
+
+**Question:** *Where are the majority of vacant lots located in the* 
+*downtown?*
+
+<br>
+
+```{r}
+
+unique(downtown$landuse)                      # Print unique values in 'landuse'
+
+```
+
+<br>
+
+Now, we create our test statement, `== "Vacant Land"`, and store the results in `result`.
+
+<br>
+
+```{r}
+
+result <- downtown$landuse == "Vacant Land"
+
+group.colors <- ifelse(test = result, 
+                       yes = "firebrick", 
+                       no = "gray80")
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)
+
+```
+
+<br>
+<br>
+
+## Part 4: Parking Lots
+
+**Question:** *How many parking lots are in downtown Syracuse?*
+
+**Answer:** There are **78** parking lots in downtown Syracuse.
+
+<br>
+
+```{r}
+
+# Use function: 'sum()'
+# Use variable: 'landuse'
+
+
+result <- downtown$landuse == "Parking"
+
+Total_lots <- sum(result)
+
+Total_lots
+
+group.colors <- ifelse(test = result, 
+                       yes = "firebrick", 
+                       no = "gray80")
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)
+
+```
+
+<br>
+<br>
+
+## Part 5: New Construction
+
+**Question:** *Where is new construction located in the city?*
+
+<br>
+
+```{r}
+
+# Use variable: 'yearbuilt'
+# Find the number of buildings constructed either after or during and after than 1980
+
+result <- downtown$yearbuilt >= 1980
+
+New_Buliding <- sum(result, na.rm = T)
+
+New_Buliding
+
+group.colors <- ifelse(test = result, 
+                       yes = "firebrick", 
+                       no = "gray80")
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)
+
+```
+
+<br>
+<br>
+
+**Part 6:** *What proportion of commercial properties are built since 1980?*
+
+**Answer:** **7.812%** of commercial properties were built since 1980.
+
+<br>
+
+```{r}
+
+# Use variable: 'landuse'
+# Use variable: 'yearbuilt'
+# Count only commercial properties with buildings constructed during or later than 1980
+Commercial_Building <- downtown$yearbuilt >= 1980 & downtown$landuse == "Commercial"
+mean(Commercial_Building, na.rm = T)
+```
+
+<br>
+<br>
+
+## Part 7: Parcels Valued Over $10M
+
+**Question:** *How many parcels have assessed values over $10 million?*
+
+**Answer:** **16** parcels have assessed values over $10 M.
+
+<br>
+
+```{r}
+
+# Use function: 'sum()'
+# Use variable: 'assessedval'
+
+result <- downtown$assessedval > 10000000
+
+Total_Parcels <- sum(result, na.rm = T)
+
+Total_Parcels
+
+group.colors <- ifelse(test = result, 
+                       yes = "firebrick", 
+                       no = "gray80")
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)
+
+```
+
+<br>
+<br>
+
+## Part 8: Total Tax Delinquent Parcels
+
+**Question:** *How many properties are delinquent on taxes?*
+
+**Answer:** **57** properties are delinquent on taxes.
+
+<br>
+
+```{r}
+
+# Use function: 'sum()'
+# Use variable: 'amtdelinqt'
+
+result <- downtown$amtdelinqt != 0
+
+Prop_delinquent <- sum(result, na.rm = T)
+
+Prop_delinquent
+
+group.colors <- ifelse(test = result, 
+                       yes = "firebrick", 
+                       no = "gray80")
+
+plot(downtown,
+     border = NA, 
+     col = group.colors)
+
+```
+
+<br>
+<br>
+
+## Part 9: Tax Delinquent Parcels
+
+**Question:** *What proportion of parcels have delinquent tax payments owed?*
+
+**Answer:** **14.65%** of parcels have delinquent tax payments owed.
+
+<br>
+
+```{r}
+
+# Use function: 'mean()'
+# Use variable: 'amtdelinqt'
+Res <- mean(result, na.rm = T)
+Res
+
+```
+
+<br>
+<br>
+
+## Part 10: Tax Delinquent Commercial Properties
+
+**Question I:** *What proportion of commercial properties are delinquent on taxes?*
+
+**Question II:** *What proportion of delinquent tax bills are owed by commercial parcels?*
+
+<br>
+
+**Answer I:** **11.96%** of commercial properties are delinquent on taxes. 
+
+**Answer II:** **86.95%** of delinquent tax dollars are owed by commercial parcels.
+
+<br>
+
+```{r}
+
+# Use function: 'mean()'
+# Use variable: 'amtdelinqt'
+# Use variable: 'landuse'
+
+# For the first sub division tax-delinquent is commercial properties over all commercial properties
+Com_deli <- (sum(downtown$landuse == "Commercial" & downtown$amtdelinqt !=0, na.rm = TRUE)) / (sum(downtown$landuse == "Commercial", na.rm = TRUE))
+
+print(Com_deli)
+
+
+
+# THe second subdivision is the tax dollars owed by commercial properties (a subset) over all tax dollars owed
+Result1 <- downtown[downtown$landuse == "Commercial", 22]
+
+Res1 <- sum(Result1$amtdelinqt, na.rm = TRUE)
+
+
+Overall_tax <- sum(downtown$amtdelinqt, na.rm = TRUE)
+
+Answer <- Res1 / Overall_tax
+print(Answer)
+
+```
+
+<br>
+<br>
+
+## Part 11: Tax Delinquent Parcels by Land Use
+
+**Question:** *How many of each land use type are delinquent on taxes? Printing in a table.*
+
+<br>
+
+```{r}
+
+# Use function: 'table()'
+# Use variable: 'amtdelinqt'
+# Use variable: 'landuse'
+Tab <- table(downtown$landuse,downtown$amtdelinqt != 0)
+Answer <- Tab[,2]
+Answer
+```
+
+<br>
+<br>
+

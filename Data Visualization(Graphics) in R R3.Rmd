@@ -1,0 +1,273 @@
+---
+title: "Data Visualization(Graphics) in R"
+author: "Abishek Rajaswamy Kuppusamy"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: readable
+    df_print: paged
+    highlight: tango
+---
+
+```{r include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      fig.width = 10, 
+                      fig.height = 8)     # Setup for knitting options
+
+library(dplyr)
+library(pander)                           # Loading required packages
+
+```
+
+<br>
+<br>
+
+# Introduction
+
+Replicating the following graph [NYT Graphic](https://archive.nytimes.com/www.nytimes.com/interactive/2013/03/29/sports/baseball/Strikeouts-Are-Still-Soaring.html?_r=0&ref=baseball) using the core R `graphics` package. 
+
+<br>
+
+![](https://raw.githubusercontent.com/DS4PS/cpp-526-fall-2019/master/LABS/images/strikeouts.png)
+
+<br>
+<br>
+
+# Lahman Data
+
+These baseball data come from the `Lahman` package, which contains `Teams` - 
+seasonal stats for each team.
+
+<br>
+
+```{r}
+
+library(Lahman) 
+data(Teams)                               # Load 'Teams' dataset
+
+```
+
+<br>
+
+## Previewing Teams Data
+
+We can view the first few rows of `Teams` with function `head()`.
+
+<br>
+
+```{r}
+
+head(Teams)
+
+```
+
+<br>
+
+## Preprocessing
+
+Summary statistics required for this graphic are calculated as follows. 
+
+**Note:** *The years in the dataset exceed the years shown in the NYT graphic and require filtering or plotting limits.*
+
+<br>
+
+```{r}
+
+ave.so <- Teams$SO / Teams$G                      # Calculating average strikeouts per game
+year <- Teams$yearID                              # Extracting a vector of years per team
+
+ave.so.min <- min(ave.so, na.rm = TRUE)
+ave.so.max <- max(ave.so, na.rm = TRUE)           # Minimum and maximum x-axis limits
+
+league.ave <- tapply(X = ave.so, 
+                     INDEX = as.factor(year), 
+                     FUN = "mean", 
+                     na.rm = TRUE)                # Calculating league strikeout average/season
+
+league.year <- as.numeric(names(league.ave))      # Ensuring years are numeric, not text
+ 
+index<- which(year >=1900 & year <=2012)
+year<- year[index]
+ave.so <-ave.so[index]
+
+index<- which(league.year >=1900 & league.year <=2012)
+league.year<- league.year[index]
+league.ave <-league.ave[index]
+```
+
+<br>
+<br>
+
+# Replication
+
+The following recreates the NYT graphic as closely as possible.
+
+
+<br>
+
+## 1. Average Strike-Outs by Year
+
+The following establishes plot dimensions and specifies x- and y-axis variables. 
+
+```{r}
+
+plot.new()
+
+plot.window(xlim = c(1900, 2012), 
+            ylim = c(ave.so.min, 
+                     ave.so.max))   # Specify dimensions
+
+points(x = year, 
+       y = ave.so)                  # Create scatterplot
+
+
+```
+
+<br>
+<br>
+
+## 2. Point Color, Size, & Shape
+
+The following additional code builds on the previous plot to specify point color, size, and shape.
+
+```{r}
+
+plot.new()
+
+plot.window(xlim = c(1900, 2012),   # Specify x-axis limits 
+            ylim = c(ave.so.min, 
+                     ave.so.max))   # Specify y-axis limits
+
+points(x = year, 
+       y = ave.so,
+       col = "gray85",              # Color
+       pch = 16,                    # Shape
+       cex = 0.75)                  # Size
+
+
+```
+
+<br>
+<br>
+
+## 3. Full Replication
+
+The following code replicates the NYT graphic in its entirety.
+
+
+```{r}
+
+# Your code here
+plot.new()
+
+plot.window(xlim = c(1900, 2012), 
+            ylim = c(ave.so.min, 
+                     ave.so.max))   # Specify dimensions
+
+points(x = year, 
+       y = ave.so,
+       col = "gray85",              
+       pch = 16,                    
+       cex = 0.75)
+
+axis(side=1, # Add x-axis
+     lwd = 2,  # Line width
+     hadj = -0.1, # Horizontal label position 
+     padj = -1, # Vertical label position
+     at = seq(from = 1900, to = 2010, by =10)) # Specify tick label sequence
+
+axis(side = 4,                      # Add y-axis
+     lwd = 0,                       # Remove axis line
+     las = 1,                       # Rotate labels
+     col.axis = "gray85",           # Adjust label colors
+     at = seq(from = 0,             # Specify axis values
+              to = 9, 
+              by = 1), 
+     font.axis = 2)                 # Set labels to bold
+
+abline(h= 1:9, 
+       lty= "dotted", #line type
+       col= "gray85")
+
+mtext(text="Strikeouts on the Rise",
+      adj = 0,
+      family= "serif",
+      cex = 2)
+
+mtext(text ="There were more strikeouts in 2012 than at any other time in major league history.",
+      adj = 0,
+      family= "serif",
+      cex = 1.25,
+      padj = 2.5)
+
+mtext(side = 3, line = 0.25, text="Strikeouts per game per team", cex = 0.8, adj=0, padj= 8.4)
+
+mtext(side = 3, line = 0.25, text= "(by batters)", cex = 0.8, col ='gray75', adj=0.22, padj= 8.4)
+
+
+segments(x0 =c(1917,1946,1963,1969,1973,2008),                           
+         y0 = c(3.5,3.9,5.9,5.8,5.2,6.8),
+         x1 = c(1917,1946,1963,1969,1973,2008),
+         y1 = c(1.25,1.9,2.9,7.9,1.9,3.9),
+         col = "gray75",)
+
+text(x = c(1917,1946,1963,1969,1973,2008),
+     y = c(1.05,1.7,2.7,8.4,1.65,3.65),
+     labels = c("U.S. enters\nWorld War I.","Players return\nfrom World War II.","Strike zone enlarged\nfrom 1963-68","Pitching had become so dominant\nin the 1960s that the mound\nwas lowered in 1969.","Designated hitter\nrule took effect.","Mitchell report\non steroids."),
+     cex = 0.75, col = "gray75")
+
+lines(x= league.year,
+      y= league.ave,
+      col= "deepskyblue4",
+      lwd=2)
+
+
+points(x= league.year,
+      y= league.ave,
+      col= "deepskyblue4",
+      cex=0.8,
+      pch = 16)
+
+points(x= c(1924,2012),
+       y=c(2.715,7.5),
+      col= "gray60",
+      cex=1.35,
+      pch = 21)
+
+text(x=c(1924,1924,2012,2012),
+     y = c(1.7,2.3,8.4,7.8),
+     labels = c("League average\n1924","2.7","2012\nLeague average","7.5"),
+     col = c("black","deepskyblue4","black","deepskyblue4"),
+     cex = c(0.75,1.75,0.75,1.75),
+     font = 2)
+
+legend(x=1894.5, y=8.8,
+  legend = "League Average", 
+  pch = 21, 
+  bty = "n", 
+  pt.cex = 0.7,
+  pt.bg = "deepskyblue4",
+  col = "deepskyblue4",
+  cex = 0.8, merge = TRUE,
+  text.col = "deepskyblue4", 
+  horiz = F,lwd=1.2, lty=1)
+
+legend(x=1900,y= 8.3,
+  legend = "Choose a Team     v", 
+  bty = "o", 
+  cex = 0.8,
+  text.col ="#D4AF37")
+
+legend(x=1894.5, y=8.3,
+        legend ="",pch = 21,bty = "n", pt.cex = 0.7,
+  pt.bg = "#D4AF37",
+  col = "#D4AF37",lwd=1.2, lty=1 )
+
+```
+
+<br>
+<br>
+

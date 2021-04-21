@@ -1,0 +1,228 @@
+---
+title: "Dynamic Visualization"
+output: flexdashboard::flex_dashboard
+runtime: shiny
+---
+
+```{r global, include = FALSE}
+
+library(Lahman)
+library(dplyr)
+data(Teams)
+
+ave.so <- Teams$SO / Teams$G
+year <- Teams$yearID
+
+ave.so.min <- min(ave.so, na.rm = TRUE)
+ave.so.max <- max(ave.so, na.rm = TRUE)
+
+league.ave <- tapply(X = ave.so, 
+                     INDEX = as.factor(year), 
+                     FUN = "mean", 
+                     na.rm = TRUE)
+
+league.year <- as.numeric(names(league.ave))
+
+Teams$ave.so <- ave.so
+
+```
+
+
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+Select a team to highlight on the graph.
+
+```{r}
+
+ 
+selectInput(inputId = "my_team",
+            label = "Select a team:",
+            choices = c("Cincinnati Reds","Arizona Diamondbacks","New York Yankees",
+              "Boston Red Sox",
+              "St. Louis Cardinals",
+              "Oakland Athletics",
+              "Houston Astros",
+              "Pittsburgh Pirates","Philadelphia Phillies",
+              "Chicago White Sox","Detroit Tigers","Chicago Cubs","Cleveland Indians","San Diego Padres","Seattle Mariners","Texas Rangers","Atlanta Braves","New York Mets","Toronto Blue Jays","Chicago White Sox"),
+             selected = "Cincinnati Reds")
+
+```
+
+
+**Author:**Abishek Rajaswamy Kuppusamy
+
+**Date:**  `r format(Sys.time(), '%B %d, %Y')`
+
+
+Column
+-----------------------------------------------------------------------
+
+### Strikeouts on the Rise
+
+```{r}
+
+renderPlot({
+
+plot.new()
+
+one_team <- filter(.data = Teams, name ==input$my_team )#
+
+index<- which(year >=1900 & year <=2012)
+year<- year[index]
+ave.so <-ave.so[index]
+
+index<- which(league.year >=1900 & league.year <=2012)
+league.year<- league.year[index]
+league.ave <-league.ave[index]
+
+plot.window(xlim = c(1900, 2012), 
+            ylim = c(ave.so.min, 
+                     ave.so.max))   # Specify dimensions
+
+points(x = year, 
+       y = ave.so,
+       col = "gray85",              
+       pch = 16,                    
+       cex = 0.75)
+
+axis(side=1, # Add x-axis
+     lwd = 2,  # Line width
+     hadj = -0.1, # Horizontal label position 
+     padj = -1, # Vertical label position
+     at = seq(from = 1900, to = 2010, by =10)) # Specify tick label sequence
+
+axis(side = 4,                      # Add y-axis
+     lwd = 0,                       # Remove axis line
+     las = 1,                       # Rotate labels
+     col.axis = "gray85",           # Adjust label colors
+     at = seq(from = 0,             # Specify axis values
+              to = 9, 
+              by = 1), 
+     font.axis = 2)                 # Set labels to bold
+
+abline(h= 1:9, 
+       lty= "dotted", #line type
+       col= "gray85")
+
+mtext(text="Strikeouts on the Rise",
+      adj = 0,
+      family= "serif",
+      cex = 2)
+
+mtext(text ="There were more strikeouts in 2012 than at any other time in major league history.",
+      adj = 0,
+      family= "serif",
+      cex = 1.25,
+      padj = 1.5)
+
+
+segments(x0 =c(1917,1946,1963,1969,1973,2008),                           
+         y0 = c(3.5,3.9,5.9,5.8,5.2,6.8),
+         x1 = c(1917,1946,1963,1969,1973,2008),
+         y1 = c(1.25,1.9,2.9,7.9,1.9,3.9),
+         col = "gray75",)
+
+text(x = c(1917,1946,1963,1969,1973,2008),
+     y = c(1.05,1.7,2.7,8.4,1.65,3.65),
+     labels = c("U.S. enters\nWorld War I.","Players return\nfrom World War II.","Strike zone enlarged\nfrom 1963-68","Pitching had become so dominant\nin the 1960s that the mound\nwas lowered in 1969.","Designated hitter\nrule took effect.","Mitchell report\non steroids."),
+     cex = 0.75, col = "gray75")
+
+lines(x= league.year,
+      y= league.ave,
+      col= "deepskyblue4",
+      lwd=2)
+
+
+points(x= league.year,
+      y= league.ave,
+      col= "deepskyblue4",
+      cex=0.8,
+      pch = 16)
+#
+points( x=one_team$yearID, y=one_team$ave.so, type="b", pch=19, col="goldenrod1" )
+
+text ( x=1907.5, y=8, col="goldenrod1", labels=input$my_team, cex=0.8 )
+
+lines(x= one_team$yearID,
+      y= one_team$ave.so,
+      col= "goldenrod1",
+      lwd=2)
+
+points(x= c(1924,2012),
+       y=c(2.715,7.5),
+      col= "gray60",
+      cex=1.35,
+      pch = 21)
+
+
+#
+text(x=c(1924,1924,2012,2012),
+     y = c(1.7,2.3,8.4,7.8),
+     labels = c("League average\n1924","2.7","2012\nLeague average","7.5"),
+     col = c("black","deepskyblue4","black","deepskyblue4"),
+     cex = c(0.75,1.75,0.75,1.75),
+     font = 2)
+
+segments(x0 = 1900, 
+         x1 = 1931,
+         y0 = 9, 
+         y1 = 9, 
+         col = "white", 
+         lwd = 3)
+
+text(x = 1900.15,
+     y = 9, 
+     labels = "Strikeouts per game per team", 
+     col = "gray35", 
+     adj = 0.175, 
+     cex = 0.8, 
+     font = 2)                    
+
+text(x = 1926.315,
+     y = 9, 
+     labels = "(by batters)", 
+     col = "gray70", 
+     cex = 0.75)                  
+
+text(x = 1907.5,
+     y = 8.5, 
+     labels = "League average", 
+     col = "deepskyblue4", 
+     cex = 0.75)                  
+
+segments(x0 = 1895.85, 
+         x1 = 1899,
+         y0 = 8.5, 
+         y1 = 8.5,
+         col = "deepskyblue4",
+         lwd = 1.75)              
+
+points(x = c(1895.85, 1899),
+       y = c(8.5, 8.5),
+       xpd = NA,
+       col = "deepskyblue4",
+       pch = 16,
+       cex = 0.5)                 
+
+
+segments(x0 = 1895.85, 
+         x1 = 1899,
+         y0 = 8, 
+         y1 = 8,
+         col = "goldenrod1",
+         lwd = 1.75)              
+
+points(x = c(1895.85, 1899),
+       y = c(8, 8),
+       xpd = NA,
+       col = "goldenrod1",
+       pch = 16,
+       cex = 0.5)     
+
+  
+})
+
+```
+

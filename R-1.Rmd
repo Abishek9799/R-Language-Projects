@@ -1,0 +1,225 @@
+---
+title: "Functions and Vectors"
+author: "Abishek Rajaswamy Kuppusamy"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    df_print: paged
+    theme: cerulean
+    highlight: haddock
+---
+
+```{r include = FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE)
+
+```
+
+<br>
+
+# Source Data
+
+The following report analyzes tax parcel data from Syracuse, New York (USA).
+
+View the "Data Dictionary" here: 
+[**Syracuse City Tax Parcel Data**](http://data.syrgov.net/datasets/1b346804e1364a5eb85ccb53302e3c91_0)
+
+<br>
+<br>
+
+# Importing the Data
+
+The following code imports the Syracuse, NY tax parcel data using a URL.
+
+```{r cache = TRUE}
+
+url <- paste0("https://raw.githubusercontent.com/DS4PS/Data",
+              "-Science-Class/master/DATA/syr_parcels.csv")
+
+dat <- read.csv(url, 
+                strings = FALSE)
+
+```
+
+<br>
+<br>
+
+# Previewing the Data
+
+There are several exploratory functions to better understand our new dataset.
+
+We can inspect the first 5 rows of these data using function `head()`.
+
+<br>
+
+```{r}
+
+head(dat, 5)  
+
+```
+
+<br>
+
+### Listing All Variables
+
+Functions `names()` or `colnames()` will print all variable names in a dataset.
+
+<br>
+
+```{r}
+
+names(dat)                # List all variables with 'names()'
+
+```
+
+<br>
+
+### Previewing Specific Variables
+
+We can also inspect the values of a variable by extracting it with `$`.
+
+The extracted variable is called a "vector".
+
+<br>
+
+```{r}
+
+head(dat$owner, 10)       # Preview a variable, or "vector"
+
+```
+
+<br>
+
+### Listing Unique Values
+
+Function `unique()` helps us determine what values exist in a variable.
+
+<br>
+
+```{r}
+
+unique(dat$land_use)      # Print all possible values with 'unique()'
+
+```
+
+<br>
+
+### Examining Data Structure
+
+Function `str()` provides an overview of total rows and columns (dimensions), 
+variable classes, and a preview of values.
+
+<br>
+
+```{r}
+
+str(object = dat,
+    vec.len = 2)          # Examine data structure with 'str()'
+
+```
+
+<br>
+<br>
+
+
+## Part 1: Total Parcels
+
+**Question:** *How many tax parcels are in Syracuse, NY?* 
+
+**Answer:** There are **41,502** tax parcels in Syracuse, NY. 
+
+<br>
+
+```{r}
+
+# exploratory functions: 'dim()', 'nrow()', or 'str()'
+dim(dat)[1]
+
+```
+
+<br>
+
+## Part 2: Total Acres
+
+**Question:** *How many acres of land are in Syracuse, NY?*
+
+**Answer:** There are **12,510.49** acres of land in Syracuse, NY.
+
+<br>
+
+```{r}
+
+# Passing a numeric variable to function 'sum()', with argument 'na.rm = TRUE'
+sum(dat$acres, na.rm = TRUE)
+```
+
+<br>
+
+## Part 3: Vacant Buildings
+
+**Question:** *How many vacant buildings are there in Syracuse, NY?*
+
+**Answer:** There are **1888** vacant buildings in Syracuse, NY.
+
+<br>
+
+```{r}
+
+# Passing a numeric variable to function 'sum()', with argument 'na.rm = TRUE'
+sum(dat$vacantbuil, na.rm = TRUE)
+```
+
+
+## Part 4: Tax-Exempt Parcels
+
+**Question:** *What proportion of parcels are tax-exempt?*
+
+**Answer:** **10.7%** of parcels are tax-exempt.
+
+<br>
+
+```{r}
+
+# Passing a logical ('TRUE' or 'FALSE') variable to function 'mean()', with argument 'na.rm = TRUE'
+mean(dat$tax.exempt, na.rm = TRUE)
+```
+
+<br>
+
+## Part 5: Neighborhoods & Parcels
+
+**Question:** *Which neighborhood contains the most tax parcels?*
+
+**Answer:** **Eastwood** contains the most tax parcels.
+
+<br>
+
+```{r}
+
+# Passing the appropriate variable to function 'table()'
+table(dat$neighborhood)
+```
+
+<br>
+
+## Part 6: Neighborhoods & Vacant Lots
+
+**Question:** *Which neighborhood contains the most vacant lots?*
+
+**Answer:** **Near Westside** contains the most vacant lots.
+
+<br>
+
+```{r}
+
+# Passing two variables to function 'table()', separated by a comma
+
+table(dat$neighborhood, dat$land_use)
+
+```
+
+<br>
+<br>
+
